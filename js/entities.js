@@ -1,317 +1,228 @@
-export class BaseEntity {
-    constructor(x, y, speed, type) {
-        this.x = x;
-        this.y = y;
-        this.type = type;
-        this.speed = speed;
-        this.lifetime = 6;
-        this.age = 0;
-        
-        // Canvas dimensions (will be updated)
-        this.canvasWidth = 800;
-        this.canvasHeight = 600;
-        
-        // Random direction
-        const angle = Math.random() * Math.PI * 2;
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        
-        // Visual properties
-        this.color = this.getColor();
-        this.size = this.getSize();
-        this.rotation = 0;
-        this.rotationSpeed = (Math.random() - 0.5) * 4;
-        
-        // Animation
-        this.scale = 0;
-        this.targetScale = 1;
-        this.animationSpeed = 3;
+export class EntityManager {
+    constructor(game) {
+        this.game = game;
+        this.entities = [];
+        this.shapes = ['circle', 'square', 'tri', 'star'];
+        this.colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#fec957', '#ff9ff3', '#54a0ff', '#48dbfb'];
     }
-
-    getColor() {
-        return '#ffffff';
+    
+    spawn() {
+        const canvas = this.game.engine.canvas;
+        const type = this.getRandomType();
+        const entity = new Entity(type, canvas.width, canvas.height, this.game.stats.speed);
+        this.entities.push(entity);
     }
-
-    getSize() {
-        return 20;
+    
+    getRandomType() {
+        const rand = Math.random();
+        
+        if (rand < 0.05) return 'bomb';
+        if (rand < 0.15) return 'star';
+        if (rand < 0.35) return 'square';
+        if (rand < 0.55) return 'tri';
+        return 'circle';
     }
-
+    
+    checkHit(x, y, radius) {
+        for (let i = this.entities.length - 1; i >= 0; i--) {
+            const entity = this.entities[i];
+            const dx = x - entity.x;
+            const dy = y - entity.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance <= entity.r + radius * 25) {
+                return entity;
+            }
+        }
+        return null;
+    }
+    
+    remove(entity) {
+        const index = this.entities.indexOf(entity);
+        if (index > -1) {
+            this.entities.splice(index, 1);
+        }
+    }
+    
+    clear() {
+        this.entities.length = 0;
+    }
+    
     update(deltaTime) {
-        this.age += deltaTime;
+        for (let i = this.entities.length - 1; i >= 0; i--) {
+            const entity = this.entities[i];
+            entity.update(deltaTime);
+            
+            if (entity.life <= 0) {
+                if (entity.type !== 'bomb') {
+                    this.game.loseLife();
+                }
+                this.entities.splice(i, 1);
+            }
+        }
+    }
+    
+    render(ctx) {
+        this.entities.forEach(entity => entity.render(ctx));
+    }
+}
+
+export class Entity {
+    constructor(type, canvasWidth, canvasHeight, speed) {
+        this.type = type;
+        this.r = this.getRadius(type);
+        this.life = 6;
         
-        // Update position
+        // Ensure valid canvas dimensions
+        const width = canvasWidth || 800;
+        const height = canvasHeight || 600;
+        
+        this.x = Math.random() * (width - 2 * this.r) + this.r;
+        this.y = Math.random() * (height - 2 * this.r - 70) + this.r + 70;
+        
+        const angle = Math.random() * Math.PI * 2;
+        const spd = speed * (0.5 + Math.random() * 0.7);
+        this.vx = Math.cos(angle) * spd;
+        this.vy = Math.sin(angle) * spd;
+        
+        this.color = this.getColor(type);
+        this.canvasWidth = width;
+        this.canvasHeight = height;
+    }
+    
+    getRadius(type) {
+        switch (type) {
+            case 'star': return 30;
+            case 'bomb': return 25;
+            default: return 25;
+        }
+    }
+    
+    getColor(type) {
+        switch (type) {
+            case 'circle': return '#ff6b6b';
+            case 'square': return '#4ecdc4';
+            case 'tri': return '#45b7d1';
+            case 'star': return '#fec957';
+            case 'bomb': return '#000';
+            default: return '#ff6b6b';
+        }
+    }
+    
+    update(deltaTime) {
         this.x += this.vx * deltaTime;
         this.y += this.vy * deltaTime;
-        this.rotation += this.rotationSpeed * deltaTime;
+        this.life -= deltaTime;
         
         // Bounce off walls
-        if (this.x - this.size < 0 || this.x + this.size > this.canvasWidth) {
+        const width = this.canvasWidth;
+        const height = this.canvasHeight;
+        
+        if (this.x <= this.r || this.x >= width - this.r) {
             this.vx *= -1;
-            this.x = Math.max(this.size, Math.min(this.canvasWidth - this.size, this.x));
+            this.x = Math.max(this.r, Math.min(width - this.r, this.x));
         }
-        
-        if (this.y - this.size < 60 || this.y + this.size > this.canvasHeight) {
+        if (this.y <= this.r || this.y >= height - this.r) {
             this.vy *= -1;
-            this.y = Math.max(60 + this.size, Math.min(this.canvasHeight - this.size, this.y));
-        }
-        
-        // Scale animation
-        if (this.scale < this.targetScale) {
-            this.scale = Math.min(this.targetScale, this.scale + this.animationSpeed * deltaTime);
+            this.y = Math.max(this.r, Math.min(height - this.r, this.y));
         }
     }
-
+    
     render(ctx) {
         ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
-        ctx.scale(this.scale, this.scale);
         
-        this.renderShape(ctx);
-        
-        ctx.restore();
-    }
-
-    renderShape(ctx) {
-        ctx.fillStyle = this.color;
+        // Draw glow effect
+        const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 1.5);
+        glow.addColorStop(0, this.color);
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    contains(x, y) {
-        const distance = Math.sqrt((x - this.x) ** 2 + (y - this.y) ** 2);
-        return distance <= this.size * this.scale;
-    }
-
-    isExpired() {
-        return this.age >= this.lifetime;
-    }
-
-    getPoints() {
-        return 0;
-    }
-
-    getProgress() {
-        return 0;
-    }
-}
-
-export class Orb extends BaseEntity {
-    constructor(x, y, speed) {
-        super(x, y, speed, 'orb');
-        this.lifetime = 6;
-    }
-
-    getColor() {
-        const hue = (Date.now() * 0.001 + this.x * 0.01) % 360;
-        return `hsl(${hue}, 80%, 60%)`;
-    }
-
-    getSize() {
-        return 25;
-    }
-
-    getPoints() {
-        return 10;
-    }
-
-    getProgress() {
-        return 8;
-    }
-
-    renderShape(ctx) {
-        // Main circle
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.r * 1.5, 0, Math.PI * 2);
         ctx.fill();
         
-        // Inner glow
-        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
-
-export class Bomb extends BaseEntity {
-    constructor(x, y, speed) {
-        super(x, y, speed * 0.8, 'bomb');
-        this.lifetime = 5;
-        this.pulsePhase = 0;
-    }
-
-    getColor() {
-        return '#ff4444';
-    }
-
-    getSize() {
-        return 30;
-    }
-
-    getPoints() {
-        return -20;
-    }
-
-    getProgress() {
-        return -10;
-    }
-
-    update(deltaTime) {
-        super.update(deltaTime);
-        this.pulsePhase += deltaTime * 4;
-    }
-
-    renderShape(ctx) {
-        // Bomb body
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Fuse
-        ctx.strokeStyle = '#8B4513';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(0, -this.size);
-        ctx.quadraticCurveTo(10, -this.size - 10, 15, -this.size - 5);
-        ctx.stroke();
-        
-        // Warning symbol
-        ctx.fillStyle = '#ffff00';
-        ctx.font = `${this.size}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('!', 0, 0);
-        
-        // Pulsing effect
-        const pulseSize = this.size + Math.sin(this.pulsePhase) * 3;
-        ctx.strokeStyle = 'rgba(255, 68, 68, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(0, 0, pulseSize, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-}
-
-export class Star extends BaseEntity {
-    constructor(x, y, speed) {
-        super(x, y, speed * 1.2, 'star');
-        this.lifetime = 7;
-        this.twinklePhase = 0;
-    }
-
-    getColor() {
-        return '#ffdd44';
-    }
-
-    getSize() {
-        return 20;
-    }
-
-    getPoints() {
-        return 25;
-    }
-
-    getProgress() {
-        return 15;
-    }
-
-    update(deltaTime) {
-        super.update(deltaTime);
-        this.twinklePhase += deltaTime * 3;
-    }
-
-    renderShape(ctx) {
-        const spikes = 5;
-        const innerRadius = this.size * 0.5;
-        const outerRadius = this.size;
-        
+        // Draw main shape
         ctx.fillStyle = this.color;
         ctx.beginPath();
         
-        for (let i = 0; i < spikes * 2; i++) {
-            const radius = i % 2 === 0 ? outerRadius : innerRadius;
-            const angle = (i * Math.PI) / spikes;
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-            
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
+        switch (this.type) {
+            case 'circle':
+                ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                break;
+            case 'square':
+                ctx.rect(this.x - this.r, this.y - this.r, this.r * 2, this.r * 2);
+                break;
+            case 'tri':
+                this.drawTriangle(ctx);
+                break;
+            case 'star':
+                this.drawStar(ctx);
+                break;
+            case 'bomb':
+                this.drawBomb(ctx);
+                break;
+        }
+        
+        ctx.fill();
+        
+        // Add special effects
+        if (this.type === 'star') {
+            ctx.fillStyle = '#ffff88';
+            for (let i = 0; i < 4; i++) {
+                const angle = (Date.now() * 0.005) + (i * Math.PI / 2);
+                const x = this.x + Math.cos(angle) * (this.r + 5);
+                const y = this.y + Math.sin(angle) * (this.r + 5);
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
             }
         }
         
-        ctx.closePath();
-        ctx.fill();
-        
-        // Twinkle effect
-        const alpha = 0.5 + Math.sin(this.twinklePhase) * 0.3;
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.size * 0.3, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
-
-export class Decoy extends BaseEntity {
-    constructor(x, y, speed) {
-        super(x, y, speed * 0.9, 'decoy');
-        this.lifetime = 4;
-        this.alpha = 0.7;
-    }
-
-    getColor() {
-        return '#666666';
-    }
-
-    getSize() {
-        return 22;
-    }
-
-    getPoints() {
-        return -5;
-    }
-
-    getProgress() {
-        return 0;
-    }
-
-    update(deltaTime) {
-        super.update(deltaTime);
-        this.alpha = 0.4 + Math.sin(this.age * 4) * 0.3;
-    }
-
-    renderShape(ctx) {
-        ctx.globalAlpha = this.alpha;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Question mark
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `${this.size}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('?', 0, 0);
-    }
-
-    render(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
-        ctx.scale(this.scale, this.scale);
-        
-        this.renderShape(ctx);
-        
         ctx.restore();
+    }
+    
+    drawTriangle(ctx) {
+        const angle = 0;
+        const points = 3;
+        const outerRadius = this.r;
+        const innerRadius = this.r * 0.5;
+        
+        ctx.moveTo(this.x + outerRadius * Math.cos(angle), this.y + outerRadius * Math.sin(angle));
+        
+        for (let i = 1; i <= points * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+            const a = angle + (i * Math.PI) / points;
+            ctx.lineTo(this.x + radius * Math.cos(a), this.y + radius * Math.sin(a));
+        }
+        
+        ctx.closePath();
+    }
+    
+    drawStar(ctx) {
+        const angle = 0;
+        const points = 5;
+        const outerRadius = this.r;
+        const innerRadius = this.r * 0.5;
+        
+        ctx.moveTo(this.x + outerRadius * Math.cos(angle), this.y + outerRadius * Math.sin(angle));
+        
+        for (let i = 1; i <= points * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+            const a = angle + (i * Math.PI) / points;
+            ctx.lineTo(this.x + radius * Math.cos(a), this.y + radius * Math.sin(a));
+        }
+        
+        ctx.closePath();
+    }
+    
+    drawBomb(ctx) {
+        // Main bomb body
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        
+        // Fuse
+        ctx.moveTo(this.x, this.y - this.r);
+        ctx.lineTo(this.x, this.y - this.r - 8);
+        
+        // Spark at end of fuse
+        ctx.arc(this.x, this.y - this.r - 8, 3, 0, Math.PI * 2);
     }
 }

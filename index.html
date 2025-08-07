@@ -2,16 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Color Burst - Enhanced</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Color Burst Clicker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/animations.css" />
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <link rel="apple-touch-icon" href="favicon.svg" />
-    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 </head>
 <body>
     <!-- Loading Screen -->
@@ -142,7 +139,68 @@
     <!-- Game Canvas -->
     <canvas id="gameCanvas"></canvas>
 
-    <!-- Scripts -->
-    <script type="module" src="js/game-engine.js"></script>
+    <!-- HUD -->
+    <div id="hud" class="hud" hidden>
+        <div>
+            <span id="lvl">L1</span>
+            <span id="pts">0</span>
+            <span id="task">0/0</span>
+            <span id="lives">❤10</span>
+            <span id="rad">x1.0</span>
+        </div>
+        <div><span id="time" hidden>90s</span></div>
+        <div id="bar"></div>
+    </div>
+
+    <!-- Boss Health Bar -->
+    <div class="bossWrap" id="bossWrap">
+        <div id="bossHP"></div>
+    </div>
+
+    <!-- Shop Toggle -->
+    <button id="shopToggle" class="btn" hidden>SHOP (S)</button>
+    
+    <!-- Shop Panel -->
+    <div id="shop">
+        <h3>Shop</h3>
+        <div class="item" data-id="radius">
+            <div>Radius +25%
+                <div class="item-price" id="c-radius"></div>
+            </div>
+            <button class="btn">Buy</button>
+        </div>
+        <div class="item" data-id="life">
+            <div>+1 Life
+                <div class="item-price" id="c-life"></div>
+            </div>
+            <button class="btn">Buy</button>
+        </div>
+        <div class="item" data-id="bomb">
+            <div>Blast Bomb
+                <div class="item-price" id="c-bomb"></div>
+            </div>
+            <button class="btn">Buy</button>
+        </div>
+        <div class="item" data-id="slow">
+            <div>Slow-Mo 5s
+                <div class="item-price" id="c-slow"></div>
+            </div>
+            <button class="btn">Buy</button>
+        </div>
+        <small>B = blast • F = slow</small>
+    </div>
+
+    <!-- Game Over Menu -->
+    <div id="gameOverMenu" class="menu" style="display: none;">
+        <h2>Game Over!</h2>
+        <p>Final Score: <span id="finalScore">0</span></p>
+        <button class="btn" onclick="game.restart()">Play Again</button>
+        <button class="btn" onclick="game.showMainMenu()">Main Menu</button>
+    </div>
+
+    <script type="module">
+        import { Game } from './js/game.js';
+        window.game = new Game();
+    </script>
 </body>
 </html>
