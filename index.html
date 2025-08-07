@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Color Burst - Enhanced</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/animations.css" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="favicon.svg" />
+    <link rel="shortcut icon" href="favicon.ico" />
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="overlay">
+        <div class="loader">
+            <div class="loader-spinner"></div>
+            <p>Loading Color Burst...</p>
+        </div>
+    </div>
+
+    <!-- Main Menu -->
+    <div id="mainMenu" class="overlay">
+        <div class="menu-content">
+            <h1 class="game-title">
+                <span class="color-b">C</span><span class="color-r">o</span><span class="color-g">l</span><span class="color-b">o</span><span class="color-y">r</span>
+                <span class="color-p">B</span><span class="color-c">u</span><span class="color-r">r</span><span class="color-g">s</span><span class="color-y">t</span>
+            </h1>
+            <div class="menu-stats">
+                <div class="high-score-display" id="highScoreDisplay">Best: 0</div>
+                <div class="last-score-display" id="lastScoreDisplay">Last: 0</div>
+            </div>
+            <div class="menu-buttons">
+                <button class="btn btn-primary mode-button" data-mode="classic">Classic Mode</button>
+                <button class="btn btn-secondary mode-button" data-mode="timeAttack">Time Attack</button>
+                <button class="btn btn-secondary mode-button" data-mode="zen">Zen Mode</button>
+                <button class="btn btn-settings" id="settingsBtn">Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settingsPanel" class="overlay" style="display: none;">
+        <div class="settings-content">
+            <h2>Settings</h2>
+            <div class="setting-group">
+                <label>Sound Effects</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="soundToggle" checked />
+                    <span class="slider"></span>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Music</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="musicToggle" checked />
+                    <span class="slider"></span>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Difficulty</label>
+                <select id="difficultySelect">
+                    <option value="easy">Easy</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label>Particles</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="particlesToggle" checked />
+                    <span class="slider"></span>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Vibrations</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="vibrationsToggle" checked />
+                    <span class="slider"></span>
+                </div>
+            </div>
+            <div class="settings-buttons">
+                <button class="btn btn-primary" id="closeSettings">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game UI -->
+    <div id="gameUI" class="game-ui" style="display: none;">
+        <div class="ui-top">
+            <div class="score-display">
+                <span id="scoreDisplay">0</span>
+                <span class="score-label">points</span>
+            </div>
+            <div class="level-display">
+                <span id="levelDisplay">1</span>
+                <span class="level-label">level</span>
+            </div>
+            <div class="time-display" id="timeDisplay" style="display: none;">
+                <span>0:00</span>
+            </div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+
+        <div class="combo-display" id="comboDisplay" style="display: none;"></div>
+        
+        <div class="power-up-indicator" id="powerUpIndicator" style="display: none;"></div>
+
+        <div class="pause-overlay" id="pauseOverlay" style="display: none;">
+            <div class="pause-content">
+                <h2>Game Paused</h2>
+                <button class="btn btn-primary" id="resumeBtn">Resume</button>
+                <button class="btn btn-secondary" id="quitBtn">Quit to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOver" class="overlay" style="display: none;">
+        <div class="game-over-content">
+            <h2>Game Over!</h2>
+            <div class="final-score">
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <div class="new-record" id="newRecord" style="display: none;">
+                    🎉 New Record! 🎉
+                </div>
+            </div>
+            <div class="game-stats" id="gameStats"></div>
+            <div class="game-over-buttons">
+                <button class="btn btn-primary" id="restartBtn">Play Again</button>
+                <button class="btn btn-secondary" id="menuBtn">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Scripts -->
+    <script type="module" src="js/game-engine.js"></script>
+</body>
+</html>

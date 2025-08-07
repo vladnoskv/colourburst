@@ -1,0 +1,344 @@
+/* Particle Effects */
+@keyframes particle-burst {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+@keyframes particle-float {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100px) scale(0);
+        opacity: 0;
+    }
+}
+
+/* Orb Animations */
+@keyframes orb-spawn {
+    0% {
+        transform: scale(0) rotate(0deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2) rotate(180deg);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1) rotate(360deg);
+        opacity: 1;
+    }
+}
+
+@keyframes orb-pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes orb-hit {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.3);
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+/* UI Animations */
+@keyframes slide-in-top {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-in-bottom {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+        transform: translate3d(0, 0, 0);
+    }
+    40%, 43% {
+        transform: translate3d(0, -30px, 0);
+    }
+    70% {
+        transform: translate3d(0, -15px, 0);
+    }
+    90% {
+        transform: translate3d(0, -4px, 0);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-10px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(10px);
+    }
+}
+
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(255, 0, 119, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 0, 119, 0.8), 0 0 30px rgba(255, 0, 119, 0.6);
+    }
+}
+
+/* Background Animations */
+@keyframes background-shift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes star-twinkle {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* Text Animations */
+@keyframes text-glow {
+    0%, 100% {
+        text-shadow: 0 0 10px currentColor;
+    }
+    50% {
+        text-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+    }
+}
+
+@keyframes count-up {
+    from {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Power-up Animations */
+@keyframes power-up-ready {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes power-up-activate {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    50% {
+        transform: scale(1.3);
+        filter: brightness(2);
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+/* Menu Animations */
+@keyframes menu-item-hover {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes menu-appear {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Combo Effects */
+@keyframes combo-text {
+    0% {
+        transform: scale(0) rotate(0deg);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5) rotate(180deg);
+    }
+    100% {
+        transform: scale(1) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+@keyframes combo-flash {
+    0%, 100% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: rgba(255, 215, 0, 0.3);
+    }
+}
+
+/* Applying Animations */
+.orb-spawn {
+    animation: orb-spawn 0.5s ease-out;
+}
+
+.orb-pulse {
+    animation: orb-pulse 2s ease-in-out infinite;
+}
+
+.orb-hit {
+    animation: orb-hit 0.3s ease-out;
+}
+
+.particle-burst {
+    animation: particle-burst 0.6s ease-out forwards;
+}
+
+.particle-float {
+    animation: particle-float 1s ease-out forwards;
+}
+
+.ui-slide-in {
+    animation: slide-in-top 0.5s ease-out;
+}
+
+.menu-appear {
+    animation: menu-appear 0.6s ease-out;
+}
+
+.menu-appear:nth-child(1) { animation-delay: 0.1s; }
+.menu-appear:nth-child(2) { animation-delay: 0.2s; }
+.menu-appear:nth-child(3) { animation-delay: 0.3s; }
+.menu-appear:nth-child(4) { animation-delay: 0.4s; }
+
+.btn-hover:hover {
+    animation: menu-item-hover 0.3s ease-out forwards;
+}
+
+.glow-effect {
+    animation: glow 2s ease-in-out infinite;
+}
+
+.shake-effect {
+    animation: shake 0.5s ease-in-out;
+}
+
+.bounce-effect {
+    animation: bounce 0.6s ease-in-out;
+}
+
+.count-up {
+    animation: count-up 0.5s ease-out;
+}
+
+.combo-text {
+    animation: combo-text 1s ease-out forwards;
+}
+
+.combo-flash {
+    animation: combo-flash 0.3s ease-in-out;
+}
+
+.background-animate {
+    background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 400% 400%;
+    animation: background-shift 15s ease infinite;
+}
+
+/* Performance Optimizations */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Responsive Animations */
+@media (max-width: 768px) {
+    .game-title {
+        animation: text-glow 2s ease-in-out infinite;
+    }
+    
+    .power-up {
+        animation: power-up-ready 2s ease-in-out infinite;
+    }
+    
+    .power-up:disabled {
+        animation: none;
+    }
+}

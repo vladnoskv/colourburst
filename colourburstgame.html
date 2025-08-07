@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Color Burst Clicker – v4</title>
+<style>
+  html,body{margin:0;padding:0;overflow:hidden;height:100%;user-select:none;font-family:Arial,Helvetica,sans-serif;}
+  body{background:#111;transition:background 1s;}
+  #gameCanvas{display:block;cursor:pointer;}
+  .overlay{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);color:#fff;z-index:100;}
+  .btn{padding:10px 20px;margin:10px;border:none;border-radius:6px;background:#ff0077;color:#fff;font-size:18px;cursor:pointer;}
+  #ui{position:fixed;top:0;left:0;width:100%;height:44px;background:rgba(0,0,0,0.6);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 10px;box-sizing:border-box;z-index:10;}
+  #progress{position:absolute;bottom:0;left:0;height:6px;width:0%;background:linear-gradient(90deg,#ff0077,#ffce00);}
+  #shopToggle{position:fixed;right:20px;top:50px;z-index:15;background:#ff0077;border:none;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:bold;}
+  #shopPanel{position:fixed;right:20px;top:90px;width:240px;background:#222;color:#fff;border:2px solid #ff0077;padding:15px;border-radius:10px;box-shadow:0 0 10px #000;display:none;z-index:20;}
+  .shop-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .shop-btn{background:#ff0077;border:none;color:#fff;padding:6px 10px;border-radius:4px;cursor:pointer;}
+  .shop-btn:disabled{background:#555;cursor:not-allowed;}
+</style>
+</head>
+<body>
+  <!-- Start Menu -->
+  <div id="startMenu" class="overlay">
+    <h1>🎉 Color Burst Clicker 🎉</h1>
+    <button class="btn" id="startClassic">Start Classic</button>
+    <button class="btn" id="startRanked">Start Ranked (90s)</button>
+    <button class="btn" id="resetBtn">Settings / Reset</button>
+  </div>
+
+  <div id="ui" style="display:none;">
+    <div id="stats">L1 | 0 pts | Radius 1x</div>
+    <div id="timer" style="display:none;">90.0s</div>
+    <div id="progress"></div>
+  </div>
+  <button id="shopToggle" style="display:none;">SHOP (S)</button>
+  <div id="shopPanel">
+    <h3>Orb Shop</h3>
+    <div class="shop-item">
+      <span>Radius +25%</span>
+      <button class="shop-btn" id="buyRadius">150</button>
+    </div>
+  </div>
+  <canvas id="gameCanvas"></canvas>
+
+<script>
+/****************** Canvas & Resize *****************/
+const canvas=document.getElementById('gameCanvas');const ctx=canvas.getContext('2d');let W,H;function fit(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}window.addEventListener('resize',fit);fit();
+/****************** Audio *****************/
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();function osc(freq,type,dur){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(0.4,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur);}const popSound=()=>osc(300,'triangle',0.18);const dudSound=()=>osc(120,'square',0.25);const bombSound=()=>osc(60,'sawtooth',0.35);
+/****************** DOM *****************/
+const startMenu=document.getElementById('startMenu');const btnClassic=document.getElementById('startClassic');const btnRanked=document.getElementById('startRanked');const resetBtn=document.getElementById('resetBtn');const ui=document.getElementById('ui');const statsEl=document.getElementById('stats');const timerEl=document.getElementById('timer');const progressEl=document.getElementById('progress');const shopToggle=document.getElementById('shopToggle');const shopPanel=document.getElementById('shopPanel');const buyRadius=document.getElementById('buyRadius');shopToggle.onclick=()=>shopPanel.style.display=shopPanel.style.display==='none'?'block':'none';
+/****************** Game State *****************/
+let gameMode='menu'; // 'classic'|'ranked'
+let level,score,progress,baseHue,orbSpeed,spawnInt,orbLifetime,progressDecay,clickRadiusMult,radiusCost,timerLeft,rankedTotal=90;let orbs=[],particles=[];
+const types={ORB:'orb',BOMB:'bomb',STAR:'star',DECOY:'decoy'};
+class Entity{constructor(type){this.type=type;this.r=22;if(type===types.STAR)this.r=16;if(type===types.BOMB)this.r=24;if(type===types.DECOY)this.r=20;this.x=Math.random()*(W-2*this.r)+this.r;this.y=Math.random()*(H-2*this.r-70)+this.r+70;const spd=orbSpeed*(0.5+Math.random()*0.7);const ang=Math.random()*Math.PI*2;this.vx=Math.cos(ang)*spd;this.vy=Math.sin(ang)*spd;this.life=orbLifetime;if(type===types.STAR)this.life=orbLifetime*1.2;this.color=this.pickColor();}
+  pickColor(){if(this.type===types.BOMB)return'#000';if(this.type===types.STAR)return'#ffff55';if(this.type===types.DECOY)return'#808080';return`hsl(${(baseHue+Math.random()*60)%360},80%,50%)`;}
+  update(dt){this.x+=this.vx*dt;this.y+=this.vy*dt;this.life-=dt;if(this.x<this.r||this.x>W-this.r)this.vx*=-1;if(this.y<70+this.r||this.y>H-this.r)this.vy*=-1;}
+  draw(){ctx.fillStyle=this.color;ctx.beginPath();if(this.type===types.STAR){ctx.moveTo(this.x,this.y-this.r);for(let i=1;i<5;i++){const a=i*4*Math.PI/5;ctx.lineTo(this.x+Math.sin(a)*this.r,this.y-Math.cos(a)*this.r);}ctx.closePath();ctx.fill();}else{ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fill();}}
+}
+class Particle{constructor(x,y,col){this.x=x;this.y=y;this.vx=(Math.random()-0.5)*350;this.vy=(Math.random()-0.5)*350;this.life=0.6;this.r=3+Math.random()*4;this.color=col;}update(dt){this.life-=dt;this.x+=this.vx*dt;this.y+=this.vy*dt;this.vy+=160*dt;}draw(){ctx.globalAlpha=Math.max(this.life/0.6,0);ctx.fillStyle=this.color;ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}}
+function resetGame(){level=1;score=0;progress=0;baseHue=Math.random()*360;orbSpeed=120;spawnInt=1.2;orbLifetime=6;progressDecay=6;clickRadiusMult=1;radiusCost=150;timerLeft=rankedTotal;orbs=[];particles=[];updateUI();progressEl.style.width='0%';}
+function updateUI(){statsEl.textContent=`L${level} | ${score} pts | Radius ${clickRadiusMult.toFixed(1)}x`;if(gameMode==='ranked')timerEl.textContent=timerLeft.toFixed(1)+'s';}
+/****************** Shop *****************/
+buyRadius.onclick=()=>{if(score>=radiusCost){score-=radiusCost;clickRadiusMult+=0.25;radiusCost=Math.round(radiusCost*1.6);buyRadius.textContent=radiusCost;updateUI();}};
+/****************** Level & Background *****************/
+function levelUp(){level++;orbSpeed+=40;spawnInt*=0.85;orbLifetime*=0.93;baseHue=Math.random()*360;bodyBg();}
+function levelDown(){if(level>1){level--;orbSpeed=Math.max(100,orbSpeed-40);spawnInt=Math.min(2,spawnInt*1.15);progress=90;bodyBg();}}
+function bodyBg(){const cols=['#111','#15202b','#1b1024','#002b36','#351510','#002b42'];document.body.style.background=cols[level%cols.length];}
+/****************** Game flow *****************/
+function spawnEntity(){const roll=Math.random();let type=types.ORB;if(roll<0.1)type=types.BOMB;else if(roll<0.18)type=types.STAR;else if(roll<0.28)type=types.DECOY;orbs.push(new Entity(type));}
+canvas.addEventListener('click',e=>{if(gameMode==='menu')return;const rect=canvas.getBoundingClientRect();const x=e.clientX-rect.left;const y=e.clientY-rect.top;for(let i=orbs.length-1;i>=0;i--){const o=orbs[i];const dx=x-o.x,dy=y-o.y;if(dx*dx+dy*dy<=(o.r*clickRadiusMult)**2){handleHit(i);return;}}});
+function handleHit(idx){const o=orbs[idx];orbs.splice(idx,1);if(o.type===types.ORB){popSound();score+=10;progress+=8;}else if(o.type===types.STAR){bombSound();score=Math.max(score-25,0);}else if(o.type===types.BOMB){bombSound();score=Math.max(0,score-40);}else if(o.type===types.DECOY){dudSound();}
+for(let j=0;j<15;j++)particles.push(new Particle(o.x,o.y,o.color));updateUI();}
+function missEntity(){score=Math.max(score-5,0);updateUI();}
+/****************** Menus *****************/
+function showMenu(){gameMode='menu';startMenu.style.display='flex';ui.style.display='none';shopToggle.style.display='none';shopPanel.style.display='none';}
+function startGame(mode){gameMode=mode;resetGame();startMenu.style.display='none';ui.style.display='flex';shopToggle.style.display='block';timerEl.style.display=mode==='ranked'?'block':'none';}
+btnClassic.onclick=()=>startGame('classic');btnRanked.onclick=()=>startGame('ranked');resetBtn.onclick=()=>location.reload();window.addEventListener('keydown',e=>{if(e.key==='s'&&gameMode!=='menu')shopToggle.click();});
+/****************** Loop *****************/
+let last=0,spawnTimer=0;function loop(t){requestAnimationFrame(loop);const now=t/1000,dt=Math.min(now-last,0.035);last=now;if(gameMode==='menu')return;ctx.clearRect(0,0,W,H);
+  // Ranked timer
+  if(gameMode==='ranked'){timerLeft-=dt;if(timerLeft<=0){showMenu();return;}}
+  // Progress decay
+  progress-=progressDecay*dt;if(progress<0){progress=100;levelDown();}
+  progressEl.style.width=Math.min(progress,100)+'%';
+  // Spawn
+  spawnTimer-=dt;if(spawnTimer<=0){spawnEntity();spawnTimer=spawnInt*(0.5+Math.random()*0.5);}  
+  // Update entities
+  for(let i=orbs.length-1;i>=0;i--){const o=orbs[i];o.update(dt);if(o.life<=0){orbs.splice(i,1);missEntity();}else o.draw();}
+  // Update particles
+  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.update(dt);if(p.life<=0)particles.splice(i,1);else p.draw();}
+}
+showMenu();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
